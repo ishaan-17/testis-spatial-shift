@@ -1,0 +1,11 @@
+All models operate on a 50-dimensional PCA embedding $z_i$ of the standardized expression, with the PCA fit on the training pucks only and applied to the test puck. Let $\mathcal{N}_k(i)$ be the $k$ nearest spatial neighbours of bead $i$ within its puck, and $\bar z_i^{(k)} = \frac{1}{k}\sum_{j\in\mathcal{N}_k(i)} z_j$ the neighbourhood mean. Neighbourhoods are computed over all beads of a puck, including non-germ beads, since context is label-free.
+
+\paragraph{Expression only.} A multinomial logistic regression (LR) on $z_i$, and a two-layer MLP (256 hidden units, dropout 0.2). Both use class-balanced loss weights.
+
+\paragraph{Neighbourhood-augmented features.} LR and MLP on $[z_i, \bar z_i^{(k)}]$, the construction used by BANKSY \citep{singhal2024banksy} and related methods, for $k\in\{5,15,30\}$. As a diagnostic we also fit LR on $\bar z_i^{(k)}$ alone, i.e.\ on the surroundings without the bead.
+
+\paragraph{Graph neural network.} A two-layer GraphSAGE with mean aggregation \citep{hamilton2017inductive}, $h_i' = \sigma(W_1 h_i + W_2 \bar h_i^{(15)})$, 128 hidden units, trained full-batch on the union of training pucks (each puck is its own connected graph) and applied to the test puck's graph.
+
+\paragraph{Test-time smoothing.} We take the expression-only LR posterior $p_i$ on the test puck and replace it with $p_i' = (1-\alpha)\,p_i + \alpha\,\bar p_i^{(15)}$, then predict $\arg\max p_i'$. This is one step of label propagation on the model's own outputs \citep{huang2021combining}; it uses the target puck's geometry but no spatial input during training, so any gain reflects the target tissue's local homogeneity rather than transferred spatial features. We sweep $\alpha\in\{0.25,0.5,0.75,1\}$.
+
+\paragraph{Evaluation.} Macro-F1 over the classes present in the test puck and per-class F1, averaged over seeds (three for MLP and GraphSAGE; LR is deterministic) and then over the test pucks of a setting, with the standard deviation across test pucks. The full grid runs on two CPU cores in a few hours.

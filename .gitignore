@@ -1,0 +1,31 @@
+# raw and derived data (large; regenerate with code/00_download.sh, 01_load.py, 02_prep.py)
+data/raw/
+data/*.rpt
+proc/
+*.h5ad
+*.zip
+*.7z
+*.gz
+
+# LaTeX build files
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
+paper/main.pdf
+paper/tmpl/
+paper/pg-*.png
+paper/figs/*_prev*.png
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store

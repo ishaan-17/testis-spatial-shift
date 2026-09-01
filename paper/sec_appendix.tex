@@ -1,0 +1,83 @@
+\begin{table}[H]
+\centering
+\caption{Puck statistics after filtering. Homogeneity is the mean fraction of a bead's $k$ nearest spatial neighbours that share its NMFreg label, over all beads (k=5, 15, 30) and over germ-cell beads only (k=15).}
+\label{tab:homog}
+\small
+\begin{tabular}{lrrrrrrr}
+\toprule
+Puck & Condition & Beads & Median UMI & Homog. $k$=5 & $k$=15 & $k$=30 & Germ, $k$=15 \\
+\midrule
+WT1 & WT mouse & 29,178 & 719 & 0.524 & 0.474 & 0.432 & 0.538 \\
+WT2 & WT mouse & 29,607 & 782 & 0.524 & 0.470 & 0.426 & 0.533 \\
+WT3 & WT mouse & 39,181 & 604 & 0.561 & 0.507 & 0.464 & 0.561 \\
+DB1 & \emph{ob/ob} mouse & 25,377 & 797 & 0.484 & 0.426 & 0.385 & 0.485 \\
+DB2 & \emph{ob/ob} mouse & 35,629 & 426 & 0.537 & 0.477 & 0.433 & 0.530 \\
+DB3 & \emph{ob/ob} mouse & 30,073 & 684 & 0.574 & 0.518 & 0.473 & 0.568 \\
+HU1 & human & 30,464 & 602 & 0.362 & 0.336 & 0.316 & 0.380 \\
+HU2 & human & 33,389 & 600 & 0.379 & 0.352 & 0.331 & 0.397 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{figs/fig_pucks.png}
+\caption{Germ-cell beads of one WT mouse, one \emph{ob/ob} mouse, and one human puck, coloured by NMFreg stage. Tubule cross-sections with a spermatogonia/spermatocyte rim and a spermatid core are visible in mouse; human tubules are larger and stage labels are more mixed.}
+\label{fig:pucks}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Full version of Table~\ref{tab:main}, including the MLP models. Macro-F1, mean $\pm$ SD across test pucks.}
+\label{tab:germ4full}
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\input{../results/table_germ4_macro_f1.tex}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{figs/fig_perclass.pdf}
+\caption{Per-stage change in F1 from adding spatial context, relative to the expression-only LR, for (A) neighbourhood-augmented LR and (B) GraphSAGE. Under species shift GraphSAGE loses 15 F1 points on round spermatids (RS), the most frequent human stage.}
+\label{fig:perclass}
+\end{figure}
+
+\paragraph{Neighbourhood size and smoothing weight.} Table~\ref{tab:sweeps} reports the LR with neighbourhood features for $k\in\{5,15,30\}$ and test-time smoothing for all $\alpha$.
+
+\begin{table}[H]
+\centering
+\caption{Sensitivity to neighbourhood size $k$ (LR on expression plus neighbourhood mean) and to the smoothing weight $\alpha$ (expression-only LR posterior smoothed over the test puck's 15-NN graph). Macro-F1 for germ-cell stage, mean over test pucks.}
+\label{tab:sweeps}
+\small
+\input{../results/table_sweeps.tex}
+\end{table}
+
+\paragraph{Six-class and nine-class labels.} Tables~\ref{tab:coarse6} and \ref{tab:full9} repeat the linear models on all beads with a six-class scheme (four germ stages, tubular somatic, interstitial) and with the original nine NMFreg labels. Macro-F1 is much lower for nine classes because the rare somatic types (endothelial, macrophage, myoid) are near chance from a single bead's expression even in-distribution. The gains from context are smaller than for germ-cell stage (0.4 to 1.0 points within a species for six classes, none for nine classes) but again largest on human in-distribution folds (about two points); across species with nine classes, neither neighbourhood features nor smoothing changes macro-F1 by more than 0.004.
+
+\begin{table}[H]
+\centering
+\caption{Six-class annotation (SPG, SPC, RS, ES, tubular somatic, interstitial), all beads. Macro-F1, mean $\pm$ SD across test pucks.}
+\label{tab:coarse6}
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\input{../results/table_coarse6_macro_f1.tex}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Nine-class annotation with the original NMFreg labels, all beads. Macro-F1, mean $\pm$ SD across test pucks.}
+\label{tab:full9}
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\input{../results/table_full9_macro_f1.tex}
+\end{table}
+
+\paragraph{Gain by sequencing depth and local homogeneity.} Table~\ref{tab:strat} stratifies the accuracy gain from neighbourhood features by the test bead's UMI tertile and by the fraction of its 15 neighbours that share its label. Within a species the gain comes from low-UMI beads; under species shift it comes from high-UMI beads. In every setting context lowers accuracy for beads with heterogeneous neighbourhoods (fewer than 40\% same-label neighbours) and raises it for the rest, so the puck-level gain is a net of these two effects.
+
+\begin{table}[H]
+\centering
+\caption{Accuracy gain from neighbourhood features (expr+nbr minus expr, LR) stratified by the test bead's UMI tertile within its puck and by its local label homogeneity. Mean over test pucks of each setting.}
+\label{tab:strat}
+\small
+\input{../results/table_strat.tex}
+\end{table}
