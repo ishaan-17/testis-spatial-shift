@@ -46,7 +46,7 @@ HU2 & human & 33,389 & 600 & 0.379 & 0.352 & 0.331 & 0.397 \\
 
 \begin{table}[H]
 \centering
-\caption{Sensitivity to neighbourhood size $k$ (LR on expression plus neighbourhood mean) and to the smoothing weight $\alpha$ (expression-only LR posterior smoothed over the test puck's 15-NN graph). Macro-F1 for germ-cell stage, mean over test pucks.}
+\caption{Sensitivity to neighbourhood size $k$ (LR on expression plus neighbourhood mean) and to the smoothing weight $\alpha$ (expression-only LR posterior smoothed over the test puck's 15-nearest-neighbour graph). Macro-F1 for germ-cell stage, mean over test pucks.}
 \label{tab:sweeps}
 \small
 \input{../results/table_sweeps.tex}
@@ -82,7 +82,7 @@ HU2 & human & 33,389 & 600 & 0.379 & 0.352 & 0.331 & 0.397 \\
 \input{../results/table_strat.tex}
 \end{table}
 
-\paragraph{Representation shift.} Table~\ref{tab:shift} reports both measures of how far the feature distribution moves between training and test pucks: the AUC of a logistic regression trained to separate training-domain from test-domain beads, and the per-stage centroid displacement of Fig.~\ref{fig:main}A. Displacement is normalised by the within-class spread in that same space, since averaging over 15 neighbours shrinks the spread as well as the offset; the AUC is not normalised and is reported only to establish that the \emph{ob/ob} condition sits at chance in both spaces.
+\paragraph{Representation shift.} Table~\ref{tab:shift} reports both measures of how far the feature distribution moves between training and test pucks: the area under the receiver operating characteristic curve (AUC) of a logistic regression trained to separate training-domain from test-domain beads, and the per-stage centroid displacement of Fig.~\ref{fig:main}A. Displacement is normalised by the within-class spread in that same space, since averaging over 15 neighbours shrinks the spread as well as the offset; the AUC is not normalised and is reported only to establish that the \emph{ob/ob} condition sits at chance in both spaces.
 
 \begin{table}[H]
 \centering
@@ -91,3 +91,5 @@ HU2 & human & 33,389 & 600 & 0.379 & 0.352 & 0.331 & 0.397 \\
 \small
 \input{../results/table_shift.tex}
 \end{table}
+
+\paragraph{Hyperparameters.} All values were fixed before running the grid and shared across every setting; none were tuned on a test puck. Logistic regression: $C=0.5$, class-balanced weights, at most 1000 iterations. MLP: 256 hidden units, dropout 0.2, AdamW with learning rate $10^{-3}$ and weight decay $10^{-4}$, 40 epochs at batch size 512. GraphSAGE: two layers, 128 hidden units, dropout 0.2, AdamW with learning rate $3\times10^{-3}$ and weight decay $10^{-4}$, 150 full-batch epochs. PCA is fit on the training pucks only, with 50 components throughout.
