@@ -38,7 +38,7 @@ HU2 & human & 33,389 & 600 & 0.379 & 0.352 & 0.331 & 0.397 \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{figs/fig_perclass.pdf}
-\caption{Per-stage change in F1 from adding spatial context, relative to the expression-only LR, for (A) neighbourhood-augmented LR and (B) GraphSAGE. Under species shift GraphSAGE loses 15 F1 points on round spermatids (RS), the most frequent human stage.}
+\caption{(A, B) Per-stage change in F1 from adding spatial context, relative to the expression-only LR, in all six settings; shared vertical scale. (C) Gain from neighbourhood features per test puck against the relative informativeness of context. (D) Test-time smoothing of the expression-only posterior against the weight $\alpha$; $\alpha=1$ replaces each bead's posterior by its neighbours' mean.}
 \label{fig:perclass}
 \end{figure}
 
@@ -80,4 +80,14 @@ HU2 & human & 33,389 & 600 & 0.379 & 0.352 & 0.331 & 0.397 \\
 \label{tab:strat}
 \small
 \input{../results/table_strat.tex}
+\end{table}
+
+\paragraph{Representation shift.} Table~\ref{tab:shift} reports both measures of how far the feature distribution moves between training and test pucks: the AUC of a logistic regression trained to separate training-domain from test-domain beads, and the per-stage centroid displacement of Fig.~\ref{fig:main}A. Displacement is normalised by the within-class spread in that same space, since averaging over 15 neighbours shrinks the spread as well as the offset; the AUC is not normalised and is reported only to establish that the \emph{ob/ob} condition sits at chance in both spaces.
+
+\begin{table}[H]
+\centering
+\caption{Representation shift between training and test pucks. Domain-classifier AUC (0.5 = indistinguishable) and mean per-stage centroid displacement in units of within-class spread, for the bead's own embedding and for the neighbourhood mean.}
+\label{tab:shift}
+\small
+\input{../results/table_shift.tex}
 \end{table}

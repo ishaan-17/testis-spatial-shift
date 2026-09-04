@@ -5,13 +5,10 @@ import matplotlib.pyplot as plt
 import scienceplots  # noqa: F401  (registers the 'science' styles)
 plt.style.use(["science", "no-latex"])
 plt.rcParams.update({"font.size": 7, "axes.labelsize": 7, "axes.titlesize": 7.5, "legend.fontsize": 5.5, "xtick.labelsize": 6, "ytick.labelsize": 6, "figure.dpi": 150, "lines.markersize": 3})
-from pathlib import Path
-ROOT = Path(__file__).resolve().parents[1]  # repository root
 
-
-R = str(ROOT / "results"); FIG = str(ROOT / "paper" / "figs"); os.makedirs(FIG, exist_ok=True)
+R = "/root/work/results"; FIG = "/root/work/paper/figs"; os.makedirs(FIG, exist_ok=True)
 df = pd.read_csv(f"{R}/results_long.csv")
-A = ad.read_h5ad(ROOT / "proc" / "all.h5ad", backed="r")
+A = ad.read_h5ad("/root/work/proc/all.h5ad", backed="r")
 obs = A.obs.copy()
 
 ORDER = ["WT->WT", "DB->DB", "HU->HU", "WT->DB", "WT->HU", "WTDB->HU"]
@@ -50,7 +47,7 @@ for scheme in ["germ4", "coarse6", "full9"]:
     print(f"\n=== {scheme} macro-F1 ===\n", tab.round(3).to_string())
     if scheme == "germ4":  # main-text version without MLP rows
         lines = open(f"{R}/table_{scheme}_macro_f1.tex").read().splitlines()
-        open(f"{R}/table_germ4_main.tex", "w").write("\n".join(l for l in lines if not l.startswith("MLP")) + "\n")
+        open(f"{R}/table_germ4_main.tex", "w").write("\n".join(l for l in lines if not l.startswith("MLP") and not l.startswith("LR (nbr only)")) + "\n")
 
 # ---- Delta from spatial context, per test puck, vs neighbourhood homogeneity of the test puck
 germ = obs[obs.cell_type.isin(["SPG", "SPC", "RS", "ES"])]
@@ -64,7 +61,7 @@ delta.to_csv(f"{R}/delta_vs_homogeneity.csv", index=False)
 print("\n=== spatial-context gain (germ4 macro-F1) ===\n", delta.round(3).to_string())
 
 # ---- Figure 1: gain vs setting (bar) + gain vs homogeneity (scatter)
-fig, axes = plt.subplots(1, 3, figsize=(5.5, 1.8))
+fig, axes = plt.subplots(1, 3, figsize=(5.5, 1.7))
 ax = axes[0]
 gm = agg("germ4", ["expr", "nbr_k15", "sage_k15", "smooth_a0.5"])
 w = 0.2; xs = np.arange(len(ORDER))
@@ -159,3 +156,87 @@ for sch in ["coarse6", "full9"]:
     if not os.path.exists(f"{R}/table_{sch}_macro_f1.tex"):
         open(f"{R}/table_{sch}_macro_f1.tex", "w").write("\\begin{tabular}{l}pending\\end{tabular}\n")
 print("tables written")
+
+# ---- Figure 1 (main): the mechanism. A = representation shift by setting; B = per-stage F1 change
+# under species shift; C = per-stage representation shift under species shift. B and C share the x-axis
+# so the reader can line up where the GNN fails with where the neighbourhood representation moves most.
+sq, cs = f"{R}/shift_quant.csv", f"{R}/centroid_shift.csv"
+if os.path.exists(cs):
+    C = pd.read_csv(cs); S = pd.read_csv(sq)
+    SORDER = ["WT->WT", "WT->ob/ob", "WT->human"]
+    SNICE = {"WT->WT": "WT\u2192WT", "WT->ob/ob": "WT\u2192ob/ob", "WT->human": "WT\u2192human"}
+    OWN, NBR = "#4C72B0", "#DD8452"
+    fig, axes = plt.subplots(1, 3, figsize=(5.5, 1.65))
+
+    ax = axes[0]
+    w = 0.36; xs = np.arange(len(SORDER))
+    for i, (col, lab, cc) in enumerate([("disp_own", "bead's own", OWN), ("disp_neighbourhood", "neighbourhood", NBR)]):
+        mu = [C[C.setting == s][col].mean() for s in SORDER]
+        sd = [C[C.setting == s][col].std() for s in SORDER]
+        ax.bar(xs + (i - 0.5) * w, mu, w, yerr=sd, capsize=2, label=lab, color=cc)
+    ax.set_xticks(xs); ax.set_xticklabels([SNICE[s] for s in SORDER], rotation=20, ha="right", fontsize=5.5)
+    ax.set_ylabel("centroid shift\n(within-class spreads)")
+    ax.legend(fontsize=5, frameon=False, loc="upper left", handlelength=1)
+    ax.set_title("A. Representation shift", loc="left")
+
+    ax = axes[1]
+    sub = pc.loc["WT->HU"]
+    for i, (mdl, lab, cc) in enumerate([("nbr_k15", "expr+nbr (LR)", "#55A868"), ("sage_k15", "GraphSAGE", "#C44E52")]):
+        vals = [(sub[(f"f1_{c}", mdl)] - sub[(f"f1_{c}", "expr")]).mean() for c in cls]
+        ax.bar(np.arange(4) + (i - 0.5) * w, vals, w, label=lab, color=cc)
+    ax.axhline(0, color="k", lw=0.6); ax.set_xticks(range(4)); ax.set_xticklabels(cls)
+    ax.set_ylabel("$\\Delta$ F1 vs expr only")
+    ax.legend(fontsize=5, frameon=False, loc="lower left", handlelength=1)
+    ax.set_title("B. Per stage, WT\u2192human", loc="left")
+
+    ax = axes[2]
+    hu = C[C.setting == "WT->human"].groupby("cls")[["disp_own", "disp_neighbourhood"]].mean().reindex(cls)
+    for i, (col, lab, cc) in enumerate([("disp_own", "bead's own", OWN), ("disp_neighbourhood", "neighbourhood", NBR)]):
+        ax.bar(np.arange(4) + (i - 0.5) * w, hu[col].values, w, label=lab, color=cc)
+    ax.set_xticks(range(4)); ax.set_xticklabels(cls); ax.set_ylabel("centroid shift")
+    ax.set_title("C. Shift per stage, WT\u2192human", loc="left")
+    ax.legend(fontsize=5, frameon=False, handlelength=1, loc="upper left")
+    plt.tight_layout(); plt.savefig(f"{FIG}/fig_main.pdf"); plt.close()
+
+    # ---- appendix figure: full per-class panels, informativeness scatter, smoothing sweep
+    fig, axes = plt.subplots(1, 4, figsize=(7.4, 1.75))
+    axes[1].sharey(axes[0])
+    for ax, mdl, ttl in zip(axes[:2], ["nbr_k15", "sage_k15"], ["A. expr+nbr (LR) $-$ expr", "B. GraphSAGE $-$ expr"]):
+        for i, s in enumerate(ORDER):
+            if s not in pc.index.get_level_values(0): continue
+            sb = pc.loc[s]
+            gains = [(sb[(f"f1_{c}", mdl)] - sb[(f"f1_{c}", "expr")]).mean() for c in cls]
+            ax.bar(np.arange(4) + (i - 2.5) * 0.13, gains, 0.13, label=NICE[s])
+        ax.axhline(0, color="k", lw=0.6); ax.set_xticks(range(4)); ax.set_xticklabels(cls)
+        ax.set_title(ttl, loc="left")
+    axes[0].set_ylabel("$\\Delta$ F1 per stage")
+    axes[0].legend(fontsize=4.5, frameon=False, ncol=2, loc="lower left", columnspacing=0.5, handlelength=0.9)
+    ax = axes[2]
+    delta["ratio"] = delta["nbr_only"] / delta["expr"]
+    for s in ORDER:
+        dd = delta[delta.setting == s]
+        ax.scatter(dd.ratio, dd.gain_nbr, label=NICE[s], s=10)
+    ax.axhline(0, color="k", lw=0.6)
+    ax.set_xlabel("nbr-only / expr-only macro-F1")
+    ax.set_ylabel("$\\Delta$ macro-F1")
+    ax.legend(fontsize=4.5, frameon=False, loc="upper left", handletextpad=0.2)
+    ax.set_title("C. Gain vs informativeness", loc="left")
+    ax = axes[3]
+    for s in ORDER:
+        if s in sm.index: ax.plot(sm.columns, sm.loc[s].values, marker="o", ms=2, lw=0.9, label=NICE[s])
+    ax.set_xlabel("smoothing weight $\\alpha$"); ax.set_ylabel("macro-F1")
+    ax.set_title("D. Test-time smoothing", loc="left")
+    ax.legend(fontsize=4.5, frameon=False, loc="center left", handlelength=1.1)
+    plt.tight_layout(); plt.savefig(f"{FIG}/fig_perclass.pdf"); plt.close()
+
+    with open(f"{R}/table_shift.tex", "w") as f:
+        f.write("\\begin{tabular}{llcc|cc}\n\\toprule\n & & \\multicolumn{2}{c|}{domain-classifier AUC} & \\multicolumn{2}{c}{centroid shift} \\\\\n")
+        f.write("Setting & Test & own & nbr & own & nbr \\\\\n\\midrule\n")
+        for s in SORDER:
+            for t in sorted(S[S.setting == s].test.unique()):
+                r0 = S[(S.setting == s) & (S.test == t)].iloc[0]
+                cc2 = C[(C.setting == s) & (C.test == t)]
+                f.write(f"{SNICE[s]} & {t} & {r0.auc_own:.3f} & {r0.auc_neighbourhood:.3f} & "
+                        f"{cc2.disp_own.mean():.3f} & {cc2.disp_neighbourhood.mean():.3f} \\\\\n")
+        f.write("\\bottomrule\n\\end{tabular}\n")
+    print("main + appendix figures rebuilt")
