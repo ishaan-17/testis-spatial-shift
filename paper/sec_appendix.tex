@@ -93,3 +93,17 @@ HU2 & human & 33,389 & 600 & 0.379 & 0.352 & 0.331 & 0.397 \\
 \end{table}
 
 \paragraph{Hyperparameters.} All values were fixed before running the grid and shared across every setting; none were tuned on a test puck. Logistic regression: $C=0.5$, class-balanced weights, at most 1000 iterations. MLP: 256 hidden units, dropout 0.2, AdamW with learning rate $10^{-3}$ and weight decay $10^{-4}$, 40 epochs at batch size 512. GraphSAGE: two layers, 128 hidden units, dropout 0.2, AdamW with learning rate $3\times10^{-3}$ and weight decay $10^{-4}$, 150 full-batch epochs. PCA is fit on the training pucks only, with 50 components throughout.
+
+\paragraph{GNN depth.} Table~\ref{tab:depth} varies the number of GraphSAGE layers at otherwise identical settings. In distribution the three depths are within seed noise of each other; across species each additional layer costs about 1.1 macro-F1 points, and the ordering is the same on both human pucks. This is the prediction the mechanism in Fig.~\ref{fig:main}A makes: a one-layer model consumes the neighbourhood mean once, exactly as the linear model does, while deeper models learn a function of the neighbourhood distribution that does not hold in the target species.
+
+\begin{table}[H]
+\centering
+\caption{GraphSAGE macro-F1 by depth, germ-cell stage, mean $\pm$ SD over three seeds. All other hyperparameters are unchanged from the main results, in which GraphSAGE has two layers.}
+\label{tab:depth}
+\small
+\input{../results/table_depth.tex}
+\end{table}
+
+\paragraph{Model and neighbourhood-size sensitivity.} Neighbourhood size changes macro-F1 by at most 0.008 across $k\in\{5,15,30\}$ (Table~\ref{tab:sweeps}), and an MLP on the same features is 0.6 to 2.1 points below the logistic regression in every setting (Table~\ref{tab:germ4full}), so neither the capacity of the classifier nor the radius of the neighbourhood drives the results.
+
+\paragraph{Statistical tests.} Across the 15 setting--test-puck folds, the gain from neighbourhood features over expression only is positive in all 15 (Wilcoxon signed-rank $p=6\times10^{-5}$), as is the gain from test-time smoothing. A bead-level paired bootstrap within each test puck (400 resamples) gives a 95\% interval excluding zero on 13 of 15 folds for neighbourhood features and 14 of 15 for smoothing. GraphSAGE is the exception: averaged over all folds it is not separable from the expression-only model (9 of 15 folds positive, $p=0.61$), because its in-distribution gain and its cross-species loss cancel. Restricted to the four human-target folds, GraphSAGE is below neighbourhood-augmented LR by $0.048$ on average, roughly twelve times the largest seed-to-seed standard deviation we observed for it. Correlations across the 15 folds, with 95\% intervals from 5{,}000 bootstrap resamples of the folds, are $r=+0.69$ $[+0.37,+0.88]$ for relative informativeness against the gain and $r=-0.52$ $[-0.76,-0.12]$ for neighbourhood homogeneity; the sign of the second is the opposite of what the organization-based intuition predicts.

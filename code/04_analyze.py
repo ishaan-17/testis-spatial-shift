@@ -166,7 +166,7 @@ if os.path.exists(cs):
     SORDER = ["WT->WT", "WT->ob/ob", "WT->human"]
     SNICE = {"WT->WT": "WT\u2192WT", "WT->ob/ob": "WT\u2192ob/ob", "WT->human": "WT\u2192human"}
     OWN, NBR = "#4C72B0", "#DD8452"
-    fig, axes = plt.subplots(1, 3, figsize=(5.5, 1.65))
+    fig, axes = plt.subplots(1, 3, figsize=(5.5, 1.55))
 
     ax = axes[0]
     w = 0.36; xs = np.arange(len(SORDER))
